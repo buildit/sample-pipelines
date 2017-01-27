@@ -11,7 +11,7 @@ stage 'init'
 node(){
     tools.configureMaven("maven-3")
     tools.configureJava("jdk-7")
-    tools.configureTool("cf")
+    tools.configureTool("cf", "")
 
     repositoryUrl = "https://github.com/buildit/hello-boot.git"
     branch = "master"
