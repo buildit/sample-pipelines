@@ -5,9 +5,14 @@ def date = new date()
 def shell = new shell()
 def cloudfoundry = new cloudfoundry()
 def gitUtil = new git()
+def tools = new tools()
 
 stage 'init'
 node(){
+    tools.configureMaven("maven-3")
+    tools.configureJava("jdk-7")
+    tools.configureTool("cf")
+
     repositoryUrl = "https://github.com/buildit/hello-boot.git"
     branch = "master"
 
