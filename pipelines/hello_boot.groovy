@@ -61,11 +61,11 @@ stage('tag'){
     node() {
         git poll: false, changelog: false, url: repositoryUrl, credentialsId: gitCredentialsId, branch: branch
         sh("git checkout ${commitId}")
+        sh("git config user.name ${gitUsername}")
+        sh("git config user.email ${gitEmail}")
         sh("git tag -a ${uniqueVersion} -m \"Built version: ${uniqueVersion}\" ${commitId}")
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: gitCredentialsId, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
             def authenticatedUrl = gitUtil.authenticatedUrl(repositoryUrl, env.USERNAME, env.PASSWORD)
-            sh("git config user.name ${gitUsername}")
-            sh("git config user.email ${gitEmail}")
             sh("git remote set-url origin ${authenticatedUrl} &> /dev/null")
             sh("git push origin tag ${uniqueVersion} &> /dev/null")
         }
