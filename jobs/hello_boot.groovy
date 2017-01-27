@@ -1,8 +1,18 @@
-pipelineJob('hello_boot') {
-    description('Pipeline')
+pipelineJob("hello_boot") {
+    triggers {
+        scm 'H/2 * * * *'
+    }
     definition {
-        cps {
-            script(readFileFromWorkspace('pipelines/hello_boot.groovy'))
+        cpsScm {
+            scm {
+                git {
+                    remote {
+                        url('https://github.com/buildit/sample-pipelines.git')
+                    }
+                    branch('master')
+                }
+            }
+            scriptPath('pipelines/hello_boot.groovy')
         }
     }
 }
