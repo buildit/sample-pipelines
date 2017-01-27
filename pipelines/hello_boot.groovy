@@ -22,7 +22,7 @@ stage('init'){
         cfApiEndpoint = "${env.CLOUDFOUNDRY_API}"
 
         gitUsername = "${env.GIT_USERNAME}"
-        gitEmail = "${env.GIT_USERNAME}"
+        gitEmail = "${env.GIT_EMAIL}"
 
         gitCredentialsId = "git_credentials"
 
