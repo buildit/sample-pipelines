@@ -29,7 +29,7 @@ stage('init'){
     }
 }
 
-stage 'package' {
+stage('package') {
     node() {
         git url: repositoryUrl, credentialsId: gitCredentialsId, branch: branch
         artifactId = pom.artifactId(pwd() + "/pom.xml")
