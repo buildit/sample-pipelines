@@ -7,57 +7,69 @@ def cloudfoundry = new cloudfoundry()
 def gitUtil = new git()
 def tools = new tools()
 
-stage 'init'
-node(){
-    tools.configureMaven("maven-3")
-    tools.configureJava("jdk-7")
-    tools.configureTool("cf", "")
+stage('init'){
+    node(){
+        tools.configureMaven("maven-3")
+        tools.configureJava("jdk-7")
+        tools.configureTool("cf", "")
 
-    repositoryUrl = "https://github.com/buildit/hello-boot.git"
-    branch = "master"
+        repositoryUrl = "https://github.com/buildit/hello-boot.git"
+        branch = "master"
 
-    cfOrg = "POC24_Toolbox_Engineering01"
-    cfSpace = "development"
-    cloudFoundryCredentialsId = "cloudfoundry_credentials"
-    cfApiEndpoint = "${env.CLOUDFOUNDRY_API}"
+        cfOrg = "POC24_Toolbox_Engineering01"
+        cfSpace = "development"
+        cloudFoundryCredentialsId = "cloudfoundry_credentials"
+        cfApiEndpoint = "${env.CLOUDFOUNDRY_API}"
 
-    gitCredentialsId = "git_credentials"
+        gitUsername = "${env.GIT_USERNAME}"
+        gitEmail = "${env.GIT_USERNAME}"
 
-}
+        gitCredentialsId = "git_credentials"
 
-stage 'package'
-node() {
-    git url: repositoryUrl, credentialsId: gitCredentialsId, branch: branch
-    artifactId = pom.artifactId(pwd() + "/pom.xml")
-    version = new pom().version(pwd() + "/pom.xml")
-    majorVersion = new pom().majorVersion(pwd() + "/pom.xml")
-    uniqueVersion = version + "." + date.timestamp()
-    appName = "${artifactId}-${version}".replace(".", "-")
-    artifactPath = "target/${artifactId}-${uniqueVersion}.jar"
-    commitId = shell.pipe("git rev-parse HEAD")
-    sh "mvn -DnewVersion=${uniqueVersion} versions:set"
-    sh "mvn package"
-    stash includes: "${artifactPath}", name: 'app-artifact'
-}
-
-stage 'deploy'
-node() {
-    unstash 'app-artifact'
-    def hostName = "${artifactId}-v${version}".replace(".", "-")
-    def majorHostName = "${artifactId}-v${majorVersion}".replace(".", "-")
-    cloudfoundry.push(appName, hostName, artifactPath, uniqueVersion, cfSpace, cfOrg, cfApiEndpoint, cloudFoundryCredentialsId)
-    cloudfoundry.mapRoute(appName, majorHostName, cfSpace, cfOrg, cfApiEndpoint, cloudFoundryCredentialsId)
-}
-
-stage 'tag'
-node() {
-    git poll: false, changelog: false, url: repositoryUrl, credentialsId: gitCredentialsId, branch: branch
-    sh("git checkout ${commitId}")
-    sh("git tag -a ${uniqueVersion} -m \"Built version: ${uniqueVersion}\" ${commitId}")
-    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: gitCredentialsId, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        def authenticatedUrl = gitUtil.authenticatedUrl(repositoryUrl, env.USERNAME, env.PASSWORD)
-        sh("git remote set-url origin ${authenticatedUrl} &> /dev/null")
-        sh("git push origin tag ${uniqueVersion} &> /dev/null")
     }
 }
+
+stage 'package' {
+    node() {
+        git url: repositoryUrl, credentialsId: gitCredentialsId, branch: branch
+        artifactId = pom.artifactId(pwd() + "/pom.xml")
+        version = new pom().version(pwd() + "/pom.xml")
+        majorVersion = new pom().majorVersion(pwd() + "/pom.xml")
+        uniqueVersion = version + "." + date.timestamp()
+        appName = "${artifactId}-${version}".replace(".", "-")
+        artifactPath = "target/${artifactId}-${uniqueVersion}.jar"
+        commitId = shell.pipe("git rev-parse HEAD")
+        sh "mvn -DnewVersion=${uniqueVersion} versions:set"
+        sh "mvn package"
+        stash includes: "${artifactPath}", name: 'app-artifact'
+    }
+}
+
+
+stage('deploy'){
+    node() {
+        unstash 'app-artifact'
+        def hostName = "${artifactId}-v${version}".replace(".", "-")
+        def majorHostName = "${artifactId}-v${majorVersion}".replace(".", "-")
+        cloudfoundry.push(appName, hostName, artifactPath, uniqueVersion, cfSpace, cfOrg, cfApiEndpoint, cloudFoundryCredentialsId)
+        cloudfoundry.mapRoute(appName, majorHostName, cfSpace, cfOrg, cfApiEndpoint, cloudFoundryCredentialsId)
+    }
+}
+
+
+stage('tag'){
+    node() {
+        git poll: false, changelog: false, url: repositoryUrl, credentialsId: gitCredentialsId, branch: branch
+        sh("git checkout ${commitId}")
+        sh("git tag -a ${uniqueVersion} -m \"Built version: ${uniqueVersion}\" ${commitId}")
+        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: gitCredentialsId, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+            def authenticatedUrl = gitUtil.authenticatedUrl(repositoryUrl, env.USERNAME, env.PASSWORD)
+            sh("git config user.name ${gitUsername}")
+            sh("git config user.email ${gitEmail}")
+            sh("git remote set-url origin ${authenticatedUrl} &> /dev/null")
+            sh("git push origin tag ${uniqueVersion} &> /dev/null")
+        }
+    }
+}
+
 
