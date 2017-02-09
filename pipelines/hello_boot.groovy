@@ -18,13 +18,13 @@ stage('init'){
 
         cfOrg = "POC24_Toolbox_Engineering01"
         cfSpace = "development"
-        cloudFoundryCredentialsId = "cloudfoundry_credentials"
+        cloudFoundryCredentialsId = "global.cloudfoundry"
         cfApiEndpoint = "${env.CLOUDFOUNDRY_API}"
 
         gitUsername = "${env.GIT_USERNAME}"
         gitEmail = "${env.GIT_EMAIL}"
 
-        gitCredentialsId = "git_credentials"
+        gitCredentialsId = "global.github"
 
     }
 }
